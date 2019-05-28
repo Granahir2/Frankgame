@@ -39,8 +39,8 @@
       bool isNotFinished();
     private :
       bool orientation,ended, active, animFinished;
-      sf::Texture defaultTxt, capeTxt, animAtxt, animBtxt, animCtxt, animDtxt, painTxt ;
-      sf::Sprite sprite, cape;
+      sf::Texture defaultTxt, capeTxt, animAtxt, animBtxt, animCtxt, animDtxt, painTxt, arrowTxt ;
+      sf::Sprite sprite, cape, arrow;
       std::string animationType;
       unsigned int iter, animCape, animNum;
       sf::Clock clock;
@@ -87,6 +87,7 @@ int main(){
                 unsigned int correctA = 3;
                 std::vector<std::string> c = {"A : Lorem ispum dodor sit amet consectuer", "B : Lorem ispum dodor sit amet consectuer", "C : Lorem ispum dodor sit amet consectuer", "D : Lorem ispum dodor sit amet consectuer"};
                 player = !player;
+                playing(window, bg, questionT, c, correctA, player);
                 returned = playing(window, bg, questionT, c, correctA, player);
                 break; }
               case 1: {
@@ -142,7 +143,10 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     titleQ.setOutlineThickness(2);
   //Characters
     Character chara1(player), chara2(!player);
-    bool playing = true;
+    bool playing = true, animating=true, oldanimating;
+    sf::Time startPain;
+  //
+    sf::Clock clock;
   while(playing) {
     sf::Event event;
     while(window.pollEvent(event)) {
@@ -190,7 +194,17 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
       window.draw(titleQ);
       window.draw(box);
       choices.draw(window);
-    } else playing = (player)? chara1.isNotFinished(): chara2.isNotFinished();
+    } else {
+      oldanimating = animating;
+      animating = (player)? chara1.isNotFinished(): chara2.isNotFinished();
+      if (oldanimating != animating){ //make other character victory/pain...
+        if (!player) chara1.animate("pain");
+        else chara2.animate("pain");
+      }
+      if (!animating){ //wait other character victory/pain...
+        playing = (!player) ? chara1.isNotFinished(): chara2.isNotFinished();
+      }
+    }
     window.display();
   }
   return 0;
@@ -223,6 +237,8 @@ Character::Character(bool player){
   animBtxt.loadFromFile("res/charaB.png");
   animCtxt.loadFromFile("res/charaC.png");
   animDtxt.loadFromFile("res/charaD.png");
+  arrowTxt.loadFromFile("res/arrow.png");
+  painTxt.loadFromFile("res/pain.png");
 
   sprite.setTexture(defaultTxt);
   sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
@@ -234,6 +250,8 @@ Character::Character(bool player){
   cape.setOrigin(sf::Vector2f(175,175));
   cape.setScale((player) ? 1.f : -1.f, 1.f);
   cape.setPosition((player) ? 175 : 1280-175,718-175);
+  arrow.setTexture(arrowTxt);
+  arrow.setRotation(0);
 
   animationType = "default";
   animCape = animNum = 1;
@@ -264,13 +282,31 @@ bool Character::display(sf::RenderWindow& scr){
       int getms = clock.getElapsedTime().asMilliseconds() - animStart.asMilliseconds() - 400;
 
       if (getms>700){
-        int y = easeInCubic(getms-700>700 ? 700:getms-700,300, -300, 700);
+        int  y = easeInCubic(getms-700>700 ? 700:getms-700,300, -300, 700),
+        arrowy = easeInBack(getms-700>700 ? 700:getms-700,315, -200, 700),
+        arrowx = easeLinear(getms-700>700 ? 700:getms-700,250, 820, 700),
+        angle  = easeInOutSine(getms-700>500 ? 500:getms-700,-10, 40, 500);
         sprite.setPosition(orientation ? 175 : 1280-175,718-175-y);
+        sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
+        arrow.setPosition(arrowx,718-175-arrowy);
+        arrow.setRotation(angle);
+        scr.draw(arrow);
+        if (getms>1400){
+          animate("default");
+          ended = true;
+        } else if (getms>1300)
+          sprite.setTexture(defaultTxt);
       } else if (getms>0){
         sprite.setTextureRect(sf::Rect<int>(250,0,250,250));
         int y = easeOutExpo(getms>700 ? 700:getms,0, 300, 700);
         sprite.setPosition(orientation ? 175 : 1280-175,718-175-y);
       }
+  } else if (animationType == "pain"){
+    int getms = clock.getElapsedTime().asMilliseconds();
+    sprite.setPosition(orientation ? 175 : 1280-175, 718-175+8*std::sin((getms-getms%10)*15) );
+    if (getms-animStart.asMilliseconds() >= 500){
+      ended = true;
+    }
   }
   scr.draw(sprite);
   return 0;
@@ -283,6 +319,9 @@ bool Character::animate(std::string animationType){
   animStart = clock.getElapsedTime();
   if (animationType == "A"){
     sprite.setTexture(animAtxt);
+    sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
+  } else if (animationType == "pain"){
+    sprite.setTexture(painTxt);
     sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
   }
   return 0;
