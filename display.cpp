@@ -141,7 +141,7 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     titleQ.setPosition(640 - titleQ.getLocalBounds().width/2, 15);
     titleQ.setOutlineThickness(2);
   //Characters
-    Character chara1(player), chara2(!player);
+    Character chara1(true), chara2(false);
     bool playing = true, animating=true, oldanimating, block = false;
     sf::Time startPain;
   //
@@ -289,12 +289,17 @@ bool Character::display(sf::RenderWindow& scr){
       if (getms>700){
         int  y = easeInCubic(getms-700>700 ? 700:getms-700,300, -300, 700),
         arrowy = easeInBack(getms-700>700 ? 700:getms-700,315, -200, 700),
-        arrowx = easeLinear(getms-700>700 ? 700:getms-700,250, 820, 700),
+        arrowx = easeLinear(getms-700>700 ? 700:getms-700,0, 810, 700),
         angle  = easeInOutSine(getms-700>500 ? 500:getms-700,-10, 40, 500);
         sprite.setPosition(orientation ? 175 : 1280-175,718-175-y);
         sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
-        arrow.setPosition(arrowx,718-175-arrowy);
-        arrow.setRotation(angle);
+        if (orientation){
+          arrow.setPosition(250+arrowx,718-175-arrowy);
+          arrow.setRotation(angle);
+        } else {
+          arrow.setPosition(1030-arrowx,718-175-arrowy);
+          arrow.setRotation(180-angle);
+        }
         scr.draw(arrow);
         if (getms>1400){
           animate("default");
@@ -311,7 +316,7 @@ bool Character::display(sf::RenderWindow& scr){
       if (getms>700){
         int y = easeInExpo(getms-700>400 ? 400:getms-700,300, -300, 400),
             x = easeLinear(getms-700>400 ? 400:getms-700,600, 300, 400);
-        sprite.setPosition(orientation ? 175+x : 1280-175+x,718-175-y);
+        sprite.setPosition(orientation ? 175+x : 1280-175-x,718-175-y);
         
         if (getms>1300){
           ended = true;
@@ -321,7 +326,7 @@ bool Character::display(sf::RenderWindow& scr){
       } else if (getms>0){
         int y = easeOutCubic(getms>700 ? 700:getms,0, 300, 700),
             x = easeLinear(getms>700 ? 700:getms,0, 600, 700);
-        sprite.setPosition(orientation ? 175+x : 1280-175+x,718-175-y);
+        sprite.setPosition(orientation ? 175+x : 1280-175-x,718-175-y);
         sprite.setTextureRect(sf::Rect<int>(250,0,250,250));
       }
   } else if (animationType == "C"){
