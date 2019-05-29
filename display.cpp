@@ -1,9 +1,7 @@
 #include "easing.h"
 
 #include <iostream>
-#include <cmath>
 #include <vector>
-#include <fstream>
 #include <sstream>
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
@@ -64,15 +62,12 @@ int main(){
     menu.choices = {"Jouer","Ajouter des questions", "Quitter"};
     menu.type(false);
     menu.position(sf::Vector2f(50,75));
-
   sf::Texture bgTxt;
     bgTxt.loadFromFile("res/Fond_1.png");
   sf::Sprite bg;
     bg.setTexture(bgTxt);
-
   bool returned;
-
-  while(window.isOpen()) {
+  while (window.isOpen()){
     sf::Event event;
     while(window.pollEvent(event)) {
       if(event.type == sf::Event::Closed) {
@@ -110,7 +105,7 @@ int main(){
 
     window.clear(sf::Color::White);
     window.draw(bg);
-      if (menu.displaying) menu.draw(window);
+    if (menu.displaying) menu.draw(window);
     window.display();
   }
   return 0;
@@ -120,7 +115,6 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
   /*
    * Question loop.
    */
-
   // Choice box + gui
     sf::Texture boxtxt;
     sf::Sprite box;
@@ -146,38 +140,22 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     int selection;
     sf::Clock clock;
     sf::Time startPain;
-  while(playing) {
+    const std::string selectLetters = "ABCD";
+  while (playing){
     sf::Event event;
     while(window.pollEvent(event)) {
       if(event.type == sf::Event::Closed) {
         window.close();
         return 0;
       } else if (event.type == sf::Event::KeyReleased){
-        if (event.key.code == sf::Keyboard::Return) {
-          if (choices.displaying) { // Main Menu
-            selection = choices.enter();
-            //Answers : 
-              if (selection == 0){
-                if (player) chara1.animate("A");
-                else chara2.animate("A");
-              } else if (selection == 1){
-                if (player) chara1.animate("B");
-                else chara2.animate("B");
-              } else if (selection == 2){
-                if (player) chara1.animate("C");
-                else chara2.animate("C");
-              } else if (selection == 3){
-                if (player) chara1.animate("D");
-                else chara2.animate("D");
-              }
-            //choices.displaying = true; //never hide.
-          }
-        } else if (event.key.code == sf::Keyboard::Up) {
-          if (choices.displaying) choices.change(true);
-        } else if (event.key.code == sf::Keyboard::Down) {
-          if (choices.displaying) choices.change(false);
+        if (event.key.code == sf::Keyboard::Return && choices.displaying) { // Main Menu
+          selection = choices.enter();
+          if (player) chara1.animate(selectLetters.substr(selection,1));
+          else chara2.animate(selectLetters.substr(selection,1));
         }
       }
+      else if (event.key.code == sf::Keyboard::Up && choices.displaying) choices.change(true);
+      else if (event.key.code == sf::Keyboard::Down && choices.displaying) choices.change(false);
     }
 
     window.clear(sf::Color::White);
@@ -192,7 +170,6 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
       oldanimating = animating;
       animating = (player)? chara1.isNotFinished(): chara2.isNotFinished();
       if (oldanimating != animating && !block){ //Make the final anim
-        //selection == correctAnswer
         if (!player) {
           chara1.animate("pain");
           if (selection%2==1) chara2.animate("restart");
@@ -244,12 +221,12 @@ Character::Character(bool player){
   sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
   sprite.setOrigin(sf::Vector2f(175,175));
   sprite.setScale((player) ? 1.f : -1.f, 1.f);
-  sprite.setPosition((player) ? 175 : 1280-175,718-175);
+  sprite.setPosition((player) ? 175 : 1105,543);
   cape.setTexture(capeTxt);
   cape.setTextureRect(sf::Rect<int>(0,0,250,250));
   cape.setOrigin(sf::Vector2f(175,175));
   cape.setScale((player) ? 1.f : -1.f, 1.f);
-  cape.setPosition((player) ? 175 : 1280-175,718-175);
+  cape.setPosition((player) ? 175 : 1105,543);
   arrow.setTexture(arrowTxt);
   arrow.setRotation(0);
 
@@ -261,99 +238,77 @@ Character::Character(bool player){
 }
 
 bool Character::display(sf::RenderWindow& scr){
+  int getms = clock.getElapsedTime().asMilliseconds()-animStart.asMilliseconds();
   if (animationType == "default") {
     iter++;
     if (iter%10==0) { // each 10 frames = (6 fps)
       cape.setTextureRect(sf::Rect<int>(250*animCape,0,250,250));
       animCape++;
-      if (animCape>3){
-        animCape = 0;
-      }
+      if (animCape>3) animCape = 0;
     }
     if ( (animNum%2 == 1 && iter%60==0) || (animNum%2 == 0 && iter%60==20)  ) {
       sprite.setTextureRect(sf::Rect<int>(250*animNum,0,250,250));
       animNum++;
-      if (animNum>3){
-        animNum = 0;
-      }
+      if (animNum>3) animNum = 0;
     }
     scr.draw(cape);
   } else if (animationType == "A"){
-      int getms = clock.getElapsedTime().asMilliseconds() - animStart.asMilliseconds() - 400;
-
+      getms -= 400;
       if (getms>700){
         int  y = easeInCubic(getms-700>700 ? 700:getms-700,300, -300, 700),
         arrowy = easeInBack(getms-700>700 ? 700:getms-700,315, -200, 700),
         arrowx = easeLinear(getms-700>700 ? 700:getms-700,0, 810, 700),
         angle  = easeInOutSine(getms-700>500 ? 500:getms-700,-10, 40, 500);
-        sprite.setPosition(orientation ? 175 : 1280-175,718-175-y);
+        sprite.setPosition(orientation ? 175 : 1105,543-y);
         sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
         if (orientation){
-          arrow.setPosition(250+arrowx,718-175-arrowy);
+          arrow.setPosition(250+arrowx,543-arrowy);
           arrow.setRotation(angle);
         } else {
-          arrow.setPosition(1030-arrowx,718-175-arrowy);
+          arrow.setPosition(1030-arrowx,543-arrowy);
           arrow.setRotation(180-angle);
         }
         scr.draw(arrow);
-        if (getms>1400){
-          animate("default");
-          ended = true;
-        } else if (getms>1300)
-          sprite.setTexture(defaultTxt);
+        if      (getms>1400) ended = true;
+        else if (getms>1300) sprite.setTexture(defaultTxt);
       } else if (getms>0){
         sprite.setTextureRect(sf::Rect<int>(250,0,250,250));
-        int y = easeOutExpo(getms>700 ? 700:getms,0, 300, 700);
-        sprite.setPosition(orientation ? 175 : 1280-175,718-175-y);
+        sprite.setPosition(orientation ? 175 : 1105,543-easeOutExpo(getms>700 ? 700:getms,0, 300, 700));
       }
   } else if (animationType == "B"){
-      int getms = clock.getElapsedTime().asMilliseconds() - animStart.asMilliseconds() - 400;
+      getms -= 400;
       if (getms>700){
         int y = easeInExpo(getms-700>400 ? 400:getms-700,300, -300, 400),
             x = easeLinear(getms-700>400 ? 400:getms-700,600, 300, 400);
-        sprite.setPosition(orientation ? 175+x : 1280-175-x,718-175-y);
-        if (getms>1300)
-          ended = true;
-        else if (getms>1000)
-          sprite.setTextureRect(sf::Rect<int>(250*2,0,250,250));
+        sprite.setPosition(orientation ? 175+x : 1105-x,543-y);
+        if      (getms>1300) ended = true;
+        else if (getms>1000) sprite.setTextureRect(sf::Rect<int>(250*2,0,250,250));
       } else if (getms>0){
         int y = easeOutCubic(getms>700 ? 700:getms,0, 300, 700),
             x = easeLinear(getms>700 ? 700:getms,0, 600, 700);
-        sprite.setPosition(orientation ? 175+x : 1280-175-x,718-175-y);
+        sprite.setPosition(orientation ? 175+x : 1105-x,543-y);
         sprite.setTextureRect(sf::Rect<int>(250,0,250,250));
       }
   } else if (animationType == "C"){
-    int getms = clock.getElapsedTime().asMilliseconds()-animStart.asMilliseconds();
-    if (getms>1000){
-      sprite.setTexture(defaultTxt);
-      animate("default");
-      ended = true;
-    } else if (getms>800){
-      sprite.setTextureRect(sf::Rect<int>(250*3,0,250,250));
-    } else if (getms>600){
-      sprite.setTextureRect(sf::Rect<int>(250*2,0,250,250));
-    } else if (getms>500){
-      sprite.setTextureRect(sf::Rect<int>(250,0,250,250));
-    }
+    if     (getms>1000) ended = true;
+    else if (getms>800) sprite.setTextureRect(sf::Rect<int>(250*3,0,250,250));
+    else if (getms>600) sprite.setTextureRect(sf::Rect<int>(250*2,0,250,250));
+    else if (getms>500) sprite.setTextureRect(sf::Rect<int>(250,0,250,250));
   } else if (animationType == "D"){
-    int getms = clock.getElapsedTime().asMilliseconds()-animStart.asMilliseconds() - 400;
+    getms -= 400;
     if (getms>600){
       ended = true;
     } else if (getms>0){
       int x = easeOutElastic(getms>500 ? 500:getms,0, 800, 500);
-      sprite.setPosition(orientation ? 175+x : 1280-175-x,718-175);
+      sprite.setPosition(orientation ? 175+x : 1105-x,543);
       sprite.setTextureRect(sf::Rect<int>(350,0,350,250));
     }
   } else if (animationType == "pain"){
-    int getms = clock.getElapsedTime().asMilliseconds();
-    sprite.setPosition(orientation ? 175 : 1280-175, 718-175+8*std::sin((getms-getms%10)*15) );
-    if (getms-animStart.asMilliseconds() >= 500){
-      ended = true;
-    }
+    sprite.setPosition(orientation ? 175 : 1105, 543+8*std::sin((getms-getms%10)*15) );
+    if (getms>= 500) ended = true;
   } else if (animationType == "restart"){
-    int getms = clock.getElapsedTime().asMilliseconds()-animStart.asMilliseconds();
     int x = easeOutSine(getms>700 ? 700:getms,900, -900, 700);
-    sprite.setPosition(orientation ? 175+x : 1280-175+x,718-175);
+    sprite.setPosition(orientation ? 175+x : 1105-x,543);
     if (getms>=700) ended = true;
   }
   scr.draw(sprite);
@@ -365,38 +320,32 @@ bool Character::animate(std::string animationType){
   // default, A, B, C, D, A fail, B fail, C fail, D fail, pain
   this->animationType = animationType;
   animStart = clock.getElapsedTime();
-  if (animationType == "A"){
+  sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
+  if (animationType == "A")
     sprite.setTexture(animAtxt);
-    sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
-  } else if (animationType == "B"){
+  else if (animationType == "B")
     sprite.setTexture(animBtxt);
-    sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
-  } else if (animationType == "pain"){
-    sprite.setTexture(painTxt);
-    sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
-  } else if (animationType == "C" ){
+  else if (animationType == "C")
     sprite.setTexture(animCtxt);
-    sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
-  } else if (animationType == "D" ){
+  else if (animationType == "pain")
+    sprite.setTexture(painTxt);
+  else if (animationType == "D"){
     sprite.setTexture(animDtxt);
     sprite.setTextureRect(sf::Rect<int>(0,0,350,250));
   } else if (animationType == "restart"){
     ended = false;
     sprite.setTexture(defaultTxt);
-    sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
   }
   return 0;
 }
 
 bool Character::turn (bool t){
-  unsigned int cVal = t?255:150;
+  const unsigned int cVal = t?255:150;
   sprite.setColor(sf::Color(cVal,cVal,cVal));
   active = t;
 }
 
-bool Character::isNotFinished(){
-  return !ended;
-}
+bool Character::isNotFinished(){return !ended;}
 
 // GuiSelect class -----
 
