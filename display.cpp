@@ -301,6 +301,19 @@ bool Character::display(sf::RenderWindow& scr){
         int y = easeOutExpo(getms>700 ? 700:getms,0, 300, 700);
         sprite.setPosition(orientation ? 175 : 1280-175,718-175-y);
       }
+  } else if (animationType == "C"){
+    int getms = clock.getElapsedTime().asMilliseconds()-animStart.asMilliseconds();
+    if (getms>1000){
+      sprite.setTexture(defaultTxt);
+      animate("default");
+      ended = true;
+    } else if (getms>800){
+      sprite.setTextureRect(sf::Rect<int>(250*3,0,250,250));
+    } else if (getms>600){
+      sprite.setTextureRect(sf::Rect<int>(250*2,0,250,250));
+    } else if (getms>500){
+      sprite.setTextureRect(sf::Rect<int>(250,0,250,250));
+    }
   } else if (animationType == "pain"){
     int getms = clock.getElapsedTime().asMilliseconds();
     sprite.setPosition(orientation ? 175 : 1280-175, 718-175+8*std::sin((getms-getms%10)*15) );
@@ -320,8 +333,11 @@ bool Character::animate(std::string animationType){
   if (animationType == "A"){
     sprite.setTexture(animAtxt);
     sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
-  } else if (animationType == "pain"){
+  }else if (animationType == "pain"){
     sprite.setTexture(painTxt);
+    sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
+  } else if (animationType == "C" ){
+    sprite.setTexture(animCtxt);
     sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
   }
   return 0;
