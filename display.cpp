@@ -143,7 +143,7 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     titleQ.setOutlineThickness(2);
   //Characters
     Character chara1(player), chara2(!player);
-    bool playing = true, animating=true, oldanimating;
+    bool playing = true, animating=true, oldanimating, block = false;
     sf::Time startPain;
   //
     sf::Clock clock;
@@ -197,17 +197,18 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     } else {
       oldanimating = animating;
       animating = (player)? chara1.isNotFinished(): chara2.isNotFinished();
-      if (oldanimating != animating){ //make other character victory/pain...
+      if (oldanimating != animating && !block){ //Make the final anim
         if (!player) {
           chara1.animate("pain");
           chara2.animate("restart");
         } else {
           chara2.animate("pain");
-          chara2.animate("restart");
+          chara1.animate("restart");
         }
+        block = true;
       }
-      if (!animating){ //wait other character victory/pain...
-        playing = (!player) ? chara1.isNotFinished(): chara2.isNotFinished();
+      if (!animating){ //Wait the final anim
+        playing = (player) ? chara1.isNotFinished(): chara2.isNotFinished();
       }
     }
     window.display();
@@ -313,9 +314,9 @@ bool Character::display(sf::RenderWindow& scr){
             x = easeLinear(getms-700>400 ? 400:getms-700,600, 300, 400);
         sprite.setPosition(orientation ? 175+x : 1280-175+x,718-175-y);
         
-        if (getms>1200){
+        if (getms>1300){
           ended = true;
-        } else if (getms>1100) {
+        } else if (getms>1000) {
           sprite.setTextureRect(sf::Rect<int>(250*2,0,250,250));
         }
       } else if (getms>0){
@@ -343,6 +344,11 @@ bool Character::display(sf::RenderWindow& scr){
     if (getms-animStart.asMilliseconds() >= 500){
       ended = true;
     }
+  } else if (animationType == "restart"){
+    int getms = clock.getElapsedTime().asMilliseconds()-animStart.asMilliseconds();
+    int x = easeOutSine(getms>700 ? 700:getms,900, -900, 700);
+    sprite.setPosition(orientation ? 175+x : 1280-175+x,718-175);
+    if (getms>=700) ended = true;
   }
   scr.draw(sprite);
   return 0;
@@ -366,7 +372,7 @@ bool Character::animate(std::string animationType){
     sprite.setTexture(animCtxt);
     sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
   } else if (animationType == "restart"){
-    std::cout<<"Restart";
+    ended = false;
     sprite.setTexture(defaultTxt);
     sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
   }
