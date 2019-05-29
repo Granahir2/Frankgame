@@ -70,7 +70,7 @@ int main(){
   sf::Sprite bg;
     bg.setTexture(bgTxt);
 
-  bool returned, player;
+  bool returned;
 
   while(window.isOpen()) {
     sf::Event event;
@@ -86,9 +86,8 @@ int main(){
                 sf::String questionT = "Lorem ispum dodor sit amet consectuer ?";
                 unsigned int correctA = 3;
                 std::vector<std::string> c = {"A : Lorem ispum dodor sit amet consectuer", "B : Lorem ispum dodor sit amet consectuer", "C : Lorem ispum dodor sit amet consectuer", "D : Lorem ispum dodor sit amet consectuer"};
-                player = !player;
-                playing(window, bg, questionT, c, correctA, player);
-                returned = playing(window, bg, questionT, c, correctA, player);
+                playing(window, bg, questionT, c, correctA, true);
+                returned = playing(window, bg, questionT, c, correctA, false);
                 break; }
               case 1: {
                 std::cout<<"2\n";
@@ -338,6 +337,15 @@ bool Character::display(sf::RenderWindow& scr){
     } else if (getms>500){
       sprite.setTextureRect(sf::Rect<int>(250,0,250,250));
     }
+  } else if (animationType == "D"){
+    int getms = clock.getElapsedTime().asMilliseconds()-animStart.asMilliseconds() - 400;
+    if (getms>600){
+      ended = true;
+    } else if (getms>0){
+      int x = easeOutElastic(getms>500 ? 500:getms,0, 800, 500);
+      sprite.setPosition(orientation ? 175+x : 1280-175-x,718-175);
+      sprite.setTextureRect(sf::Rect<int>(350,0,350,250));
+    }
   } else if (animationType == "pain"){
     int getms = clock.getElapsedTime().asMilliseconds();
     sprite.setPosition(orientation ? 175 : 1280-175, 718-175+8*std::sin((getms-getms%10)*15) );
@@ -371,6 +379,9 @@ bool Character::animate(std::string animationType){
   } else if (animationType == "C" ){
     sprite.setTexture(animCtxt);
     sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
+  } else if (animationType == "D" ){
+    sprite.setTexture(animDtxt);
+    sprite.setTextureRect(sf::Rect<int>(0,0,350,250));
   } else if (animationType == "restart"){
     ended = false;
     sprite.setTexture(defaultTxt);
