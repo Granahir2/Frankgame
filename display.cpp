@@ -140,12 +140,12 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     titleQ.setCharacterSize(50);
     titleQ.setPosition(640 - titleQ.getLocalBounds().width/2, 15);
     titleQ.setOutlineThickness(2);
-  //Characters
+  //Characters + init
     Character chara1(true), chara2(false);
     bool playing = true, animating=true, oldanimating, block = false;
-    sf::Time startPain;
-  //
+    int selection;
     sf::Clock clock;
+    sf::Time startPain;
   while(playing) {
     sf::Event event;
     while(window.pollEvent(event)) {
@@ -155,26 +155,21 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
       } else if (event.type == sf::Event::KeyReleased){
         if (event.key.code == sf::Keyboard::Return) {
           if (choices.displaying) { // Main Menu
-            int test = choices.enter();
+            selection = choices.enter();
             //Answers : 
-              if (test == 0){
+              if (selection == 0){
                 if (player) chara1.animate("A");
                 else chara2.animate("A");
-              } else if (test == 1){
+              } else if (selection == 1){
                 if (player) chara1.animate("B");
                 else chara2.animate("B");
-              } else if (test == 2){
+              } else if (selection == 2){
                 if (player) chara1.animate("C");
                 else chara2.animate("C");
-              } else if (test == 3){
+              } else if (selection == 3){
                 if (player) chara1.animate("D");
                 else chara2.animate("D");
               }
-              if (test == correctAnswer)
-                std::cout<<"Correct Answer\n";
-              else
-                std::cout<<"Wrong Answer\n";
-
             //choices.displaying = true; //never hide.
           }
         } else if (event.key.code == sf::Keyboard::Up) {
@@ -197,18 +192,18 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
       oldanimating = animating;
       animating = (player)? chara1.isNotFinished(): chara2.isNotFinished();
       if (oldanimating != animating && !block){ //Make the final anim
+        //selection == correctAnswer
         if (!player) {
           chara1.animate("pain");
-          chara2.animate("restart");
+          if (selection%2==1) chara2.animate("restart");
         } else {
           chara2.animate("pain");
-          chara1.animate("restart");
+          if (selection%2==1) chara1.animate("restart");
         }
         block = true;
       }
-      if (!animating){ //Wait the final anim
-        playing = (player) ? chara1.isNotFinished(): chara2.isNotFinished();
-      }
+      if (!animating)//Wait the final anim
+        playing = !(player^selection%2==1) ? chara1.isNotFinished(): chara2.isNotFinished();
     }
     window.display();
   }
@@ -317,12 +312,10 @@ bool Character::display(sf::RenderWindow& scr){
         int y = easeInExpo(getms-700>400 ? 400:getms-700,300, -300, 400),
             x = easeLinear(getms-700>400 ? 400:getms-700,600, 300, 400);
         sprite.setPosition(orientation ? 175+x : 1280-175-x,718-175-y);
-        
-        if (getms>1300){
+        if (getms>1300)
           ended = true;
-        } else if (getms>1000) {
+        else if (getms>1000)
           sprite.setTextureRect(sf::Rect<int>(250*2,0,250,250));
-        }
       } else if (getms>0){
         int y = easeOutCubic(getms>700 ? 700:getms,0, 300, 700),
             x = easeLinear(getms>700 ? 700:getms,0, 600, 700);
