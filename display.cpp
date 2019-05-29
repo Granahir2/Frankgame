@@ -81,8 +81,10 @@ int main(){
                 sf::String questionT = "Lorem ispum dodor sit amet consectuer ?";
                 unsigned int correctA = 3;
                 std::vector<std::string> c = {"A : Lorem ispum dodor sit amet consectuer", "B : Lorem ispum dodor sit amet consectuer", "C : Lorem ispum dodor sit amet consectuer", "D : Lorem ispum dodor sit amet consectuer"};
-                playing(window, bg, questionT, c, correctA, true);
-                returned = playing(window, bg, questionT, c, correctA, false);
+                for (int i(0); i<4;i++){
+                  playing(window, bg, questionT, c, correctA, true);
+                  returned = playing(window, bg, questionT, c, correctA, false);
+                }
                 break; }
               case 1: {
                 std::cout<<"2\n";
@@ -136,6 +138,7 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     titleQ.setOutlineThickness(2);
   //Characters + init
     Character chara1(true), chara2(false);
+    chara1.turn(player); chara2.turn(!player);
     bool playing = true, animating=true, oldanimating, block = false;
     int selection;
     sf::Clock clock;
@@ -144,18 +147,17 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
   while (playing){
     sf::Event event;
     while(window.pollEvent(event)) {
-      if(event.type == sf::Event::Closed) {
-        window.close();
+      if(event.type == sf::Event::Closed)
         return 0;
-      } else if (event.type == sf::Event::KeyReleased){
+      else if (event.type == sf::Event::KeyReleased){
         if (event.key.code == sf::Keyboard::Return && choices.displaying) { // Main Menu
           selection = choices.enter();
           if (player) chara1.animate(selectLetters.substr(selection,1));
           else chara2.animate(selectLetters.substr(selection,1));
         }
+        else if (event.key.code == sf::Keyboard::Up && choices.displaying) choices.change(true);
+        else if (event.key.code == sf::Keyboard::Down && choices.displaying) choices.change(false);
       }
-      else if (event.key.code == sf::Keyboard::Up && choices.displaying) choices.change(true);
-      else if (event.key.code == sf::Keyboard::Down && choices.displaying) choices.change(false);
     }
 
     window.clear(sf::Color::White);
@@ -234,7 +236,6 @@ Character::Character(bool player){
   animCape = animNum = 1;
   iter = 0;
   ended = false;
-  turn(player);
 }
 
 bool Character::display(sf::RenderWindow& scr){
