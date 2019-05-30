@@ -34,10 +34,12 @@
       bool display(sf::RenderWindow& scr);
       bool animate(std::string animationType);
       bool turn(bool t);
+      bool failAttack(bool f);
+      bool getFailAttack();
       bool isNotFinished();
     private :
-      bool orientation,ended, active, animFinished;
-      sf::Texture defaultTxt, capeTxt, animAtxt, animBtxt, animCtxt, animDtxt, painTxt, arrowTxt ;
+      bool orientation,ended, active, animFinished, animFail;
+      sf::Texture defaultTxt, capeTxt, animAtxt, animBtxt, animCtxt, animDtxt, finalTxt, arrowTxt ;
       sf::Sprite sprite, cape, arrow;
       std::string animationType;
       unsigned int iter, animCape, animNum;
@@ -152,6 +154,7 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
       else if (event.type == sf::Event::KeyReleased){
         if (event.key.code == sf::Keyboard::Return && choices.displaying) { // Main Menu
           selection = choices.enter();
+          chara1.failAttack(chara2.failAttack(true));
           if (player) chara1.animate(selectLetters.substr(selection,1));
           else chara2.animate(selectLetters.substr(selection,1));
         }
@@ -173,10 +176,10 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
       animating = (player)? chara1.isNotFinished(): chara2.isNotFinished();
       if (oldanimating != animating && !block){ //Make the final anim
         if (!player) {
-          chara1.animate("pain");
+          chara1.animate(chara2.getFailAttack()? "victory": "pain");
           if (selection%2==1) chara2.animate("restart");
         } else {
-          chara2.animate("pain");
+          chara2.animate(chara1.getFailAttack()? "victory": "pain");
           if (selection%2==1) chara1.animate("restart");
         }
         block = true;
@@ -217,7 +220,7 @@ Character::Character(bool player){
   animCtxt.loadFromFile("res/charaC.png");
   animDtxt.loadFromFile("res/charaD.png");
   arrowTxt.loadFromFile("res/arrow.png");
-  painTxt.loadFromFile("res/pain.png");
+  finalTxt.loadFromFile("res/final.png");
 
   sprite.setTexture(defaultTxt);
   sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
@@ -257,9 +260,9 @@ bool Character::display(sf::RenderWindow& scr){
       getms -= 400;
       if (getms>700){
         int  y = easeInCubic(getms-700>700 ? 700:getms-700,300, -300, 700),
-        arrowy = easeInBack(getms-700>700 ? 700:getms-700,315, -200, 700),
-        arrowx = easeLinear(getms-700>700 ? 700:getms-700,0, 810, 700),
-        angle  = easeInOutSine(getms-700>500 ? 500:getms-700,-10, 40, 500);
+        arrowy = easeInBack(getms-700>700 ? 700:getms-700,315, animFail?-300:-200, 700),
+        arrowx = easeLinear(getms-700>700 ? 700:getms-700,0, animFail? 500 : 810, 700),
+        angle  = easeInOutSine(getms-700>500 ? 500:getms-700,animFail? 50 : -10, 40, 500);
         sprite.setPosition(orientation ? 175 : 1105,543-y);
         sprite.setTextureRect(sf::Rect<int>(0,0,250,250));
         if (orientation){
@@ -307,6 +310,8 @@ bool Character::display(sf::RenderWindow& scr){
   } else if (animationType == "pain"){
     sprite.setPosition(orientation ? 175 : 1105, 543+8*std::sin((getms-getms%10)*15) );
     if (getms>= 500) ended = true;
+  } else if (animationType == "victory"){
+    if (getms>= 500) ended = true;
   } else if (animationType == "restart"){
     int x = easeOutSine(getms>700 ? 700:getms,900, -900, 700);
     sprite.setPosition(orientation ? 175+x : 1105-x,543);
@@ -329,8 +334,11 @@ bool Character::animate(std::string animationType){
   else if (animationType == "C")
     sprite.setTexture(animCtxt);
   else if (animationType == "pain")
-    sprite.setTexture(painTxt);
-  else if (animationType == "D"){
+    sprite.setTexture(finalTxt);
+  else if (animationType == "victory"){
+    sprite.setTexture(finalTxt);
+    sprite.setTextureRect(sf::Rect<int>(250,0,250,250));
+  } else if (animationType == "D"){
     sprite.setTexture(animDtxt);
     sprite.setTextureRect(sf::Rect<int>(0,0,350,250));
   } else if (animationType == "restart"){
@@ -343,81 +351,82 @@ bool Character::animate(std::string animationType){
 bool Character::turn (bool t){
   const unsigned int cVal = t?255:150;
   sprite.setColor(sf::Color(cVal,cVal,cVal));
-  active = t;
+  return active = t;
 }
-
+bool Character::failAttack(bool f){return animFail = f;}
+bool Character::getFailAttack() {return animFail;}
 bool Character::isNotFinished(){return !ended;}
 
 // GuiSelect class -----
 
-guiSelect::guiSelect(){
-  if (!fontDeja.loadFromFile("res/Bradley.ttf"))
-    std::cerr<<"INTERNAL ERROR : Can't load default font [resources/fonts/DejaVuSans.ttf] !!";
-  if (!barTxt.loadFromFile("res/choice.png"))
-    std::cerr<<"ERROR : unable to load [resources/img/choice.png]\n";
-  if (!smallBarTxt.loadFromFile("res/smallChoice.png"))
-    std::cerr<<"ERROR : unable to load [resources/img/smallChoice.png]\n";
-  bar.setTexture(barTxt);
-  smallBar.setTexture(smallBarTxt);
-  bar.setColor(sf::Color(0,0,0,0));
-  smallBar.setColor(sf::Color(255,100,100));
-  barSelected.setTexture(barTxt);
-  smallBarSelected.setTexture(smallBarTxt);
-  valType = true;
-  iter = choicePos = 0;
-}
-
-bool guiSelect::change(bool direction){
-  // up or down selection
-  if (direction) choicePos = (choicePos==0) ? choices.size()-1 : choicePos-1;
-  else choicePos = (choicePos+1>=choices.size()) ? 0 : choicePos+1;
-  return direction;
-}
-unsigned int guiSelect::enter(){
-  //enter key pressed
-  displaying = false;
-  return choicePos;
-}
-
-bool guiSelect::draw(sf::RenderWindow& scr){
-  iter++;
-  int colorIter = 32*std::sin(0.1*iter)+32;
-  sf::Text tempTxt("",fontDeja,valType?38:27);
-  tempTxt.setFillColor(valType? sf::Color(120,130,255) : sf::Color::Black);
-  if (valType) barSelected.setColor( sf::Color(255,255,255,95+colorIter*2) );
-  else smallBarSelected.setColor( sf::Color(255,colorIter,colorIter) );
-
-  for (unsigned int i(0); i<choices.size(); i++){
-  //draw bar
-    sf::Vector2f position(valPosition.x,valPosition.y+i*50);
-    if (i==choicePos) {
-      if (valType){
-        barSelected.setPosition(position);
-        scr.draw(barSelected); 
-      } else {
-        smallBarSelected.setPosition(position);
-        scr.draw(smallBarSelected); 
-      }
-    } else {
-      if (valType){
-        bar.setPosition(position);
-        scr.draw(bar);
-      } else {
-        smallBar.setPosition(position);
-        scr.draw(smallBar);
-      }
-    }
-  //draw text
-    tempTxt.setString(toSfString(choices[i]));
-    sf::Rect<float> txtBounds = tempTxt.getGlobalBounds();
-    if (valType)
-      tempTxt.setPosition(valPosition.x + 75, valPosition.y+i*50+15);
-    else
-    tempTxt.setPosition(valPosition.x + 200 - txtBounds.width/2, valPosition.y+i*50 + (12-txtBounds.height/2) );
-    scr.draw(tempTxt);
+  guiSelect::guiSelect(){
+    if (!fontDeja.loadFromFile("res/Bradley.ttf"))
+      std::cerr<<"INTERNAL ERROR : Can't load default font [resources/fonts/DejaVuSans.ttf] !!";
+    if (!barTxt.loadFromFile("res/choice.png"))
+      std::cerr<<"ERROR : unable to load [resources/img/choice.png]\n";
+    if (!smallBarTxt.loadFromFile("res/smallChoice.png"))
+      std::cerr<<"ERROR : unable to load [resources/img/smallChoice.png]\n";
+    bar.setTexture(barTxt);
+    smallBar.setTexture(smallBarTxt);
+    bar.setColor(sf::Color(0,0,0,0));
+    smallBar.setColor(sf::Color(255,100,100));
+    barSelected.setTexture(barTxt);
+    smallBarSelected.setTexture(smallBarTxt);
+    valType = true;
+    iter = choicePos = 0;
   }
-  return true;
-}
 
-sf::Vector2f guiSelect::position(sf::Vector2f position){ return valPosition = position; } //set position
-bool guiSelect::type(bool type){ return valType = type; } //full or small msgbox
+  bool guiSelect::change(bool direction){
+    // up or down selection
+    if (direction) choicePos = (choicePos==0) ? choices.size()-1 : choicePos-1;
+    else choicePos = (choicePos+1>=choices.size()) ? 0 : choicePos+1;
+    return direction;
+  }
+  unsigned int guiSelect::enter(){
+    //enter key pressed
+    displaying = false;
+    return choicePos;
+  }
+
+  bool guiSelect::draw(sf::RenderWindow& scr){
+    iter++;
+    int colorIter = 32*std::sin(0.1*iter)+32;
+    sf::Text tempTxt("",fontDeja,valType?38:27);
+    tempTxt.setFillColor(valType? sf::Color(120,130,255) : sf::Color::Black);
+    if (valType) barSelected.setColor( sf::Color(255,255,255,95+colorIter*2) );
+    else smallBarSelected.setColor( sf::Color(255,colorIter,colorIter) );
+
+    for (unsigned int i(0); i<choices.size(); i++){
+    //draw bar
+      sf::Vector2f position(valPosition.x,valPosition.y+i*50);
+      if (i==choicePos) {
+        if (valType){
+          barSelected.setPosition(position);
+          scr.draw(barSelected); 
+        } else {
+          smallBarSelected.setPosition(position);
+          scr.draw(smallBarSelected); 
+        }
+      } else {
+        if (valType){
+          bar.setPosition(position);
+          scr.draw(bar);
+        } else {
+          smallBar.setPosition(position);
+          scr.draw(smallBar);
+        }
+      }
+    //draw text
+      tempTxt.setString(toSfString(choices[i]));
+      sf::Rect<float> txtBounds = tempTxt.getGlobalBounds();
+      if (valType)
+        tempTxt.setPosition(valPosition.x + 75, valPosition.y+i*50+15);
+      else
+      tempTxt.setPosition(valPosition.x + 200 - txtBounds.width/2, valPosition.y+i*50 + (12-txtBounds.height/2) );
+      scr.draw(tempTxt);
+    }
+    return true;
+  }
+
+  sf::Vector2f guiSelect::position(sf::Vector2f position){ return valPosition = position; } //set position
+  bool guiSelect::type(bool type){ return valType = type; } //full or small msgbox
