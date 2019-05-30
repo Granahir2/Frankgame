@@ -120,11 +120,15 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
    * Question loop.
    */
   // Choice box + gui
-    sf::Texture boxtxt;
-    sf::Sprite box;
+    sf::Texture boxtxt, epicFailTxt;
+    sf::Sprite box, epicFail;
     boxtxt.loadFromFile("res/cadre.png");
     box.setTexture(boxtxt);
     box.setPosition(283,247);
+    epicFailTxt.loadFromFile("res/epicFail.png");
+    epicFail.setTexture(epicFailTxt);
+    epicFail.setOrigin(511,247);
+    epicFail.setPosition(1280/2,720/2);
     guiSelect choices;
     choices.displaying = true;
     choices.position(sf::Vector2f(300,245));
@@ -142,7 +146,7 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     Character chara1(true), chara2(false);
     chara1.turn(player); chara2.turn(!player);
     bool playing = true, animating=true, oldanimating, block = false;
-    int selection;
+    int selection,i(0);
     sf::Clock clock;
     sf::Time startPain;
     const std::string selectLetters = "ABCD";
@@ -162,7 +166,7 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
         else if (event.key.code == sf::Keyboard::Down && choices.displaying) choices.change(false);
       }
     }
-
+    i++;
     window.clear(sf::Color::White);
     window.draw(bg);
     chara1.display(window);
@@ -174,6 +178,11 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     } else {
       oldanimating = animating;
       animating = (player)? chara1.isNotFinished(): chara2.isNotFinished();
+      if (block){ //&& fail attack
+        int toMove = 8*std::sin(i*15);
+        epicFail.setPosition(1280/2 + toMove, 720/2 + toMove);
+        window.draw(epicFail);
+      }
       if (oldanimating != animating && !block){ //Make the final anim
         if (!player) {
           chara1.animate(chara2.getFailAttack()? "victory": "pain");
