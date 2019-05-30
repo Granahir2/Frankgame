@@ -283,27 +283,33 @@ bool Character::display(sf::RenderWindow& scr){
       getms -= 400;
       if (getms>700){
         int y = easeInExpo(getms-700>400 ? 400:getms-700,300, -300, 400),
-            x = easeLinear(getms-700>400 ? 400:getms-700,600, 300, 400);
+            x = easeLinear(getms-700>400 ? 400:getms-700,animFail? 400:600,300, 400);
         sprite.setPosition(orientation ? 175+x : 1105-x,543-y);
         if      (getms>1300) ended = true;
         else if (getms>1000) sprite.setTextureRect(sf::Rect<int>(250*2,0,250,250));
       } else if (getms>0){
         int y = easeOutCubic(getms>700 ? 700:getms,0, 300, 700),
-            x = easeLinear(getms>700 ? 700:getms,0, 600, 700);
+            x = easeLinear(getms>700 ? 700:getms,0, animFail? 400:600, 700);
         sprite.setPosition(orientation ? 175+x : 1105-x,543-y);
         sprite.setTextureRect(sf::Rect<int>(250,0,250,250));
       }
   } else if (animationType == "C"){
     if     (getms>1000) ended = true;
-    else if (getms>800) sprite.setTextureRect(sf::Rect<int>(250*3,0,250,250));
-    else if (getms>600) sprite.setTextureRect(sf::Rect<int>(250*2,0,250,250));
+    else if (getms>800&&!animFail) sprite.setTextureRect(sf::Rect<int>(250*3,0,250,250));
+    else if (getms>600&&!animFail) sprite.setTextureRect(sf::Rect<int>(250*2,0,250,250));
     else if (getms>500) sprite.setTextureRect(sf::Rect<int>(250,0,250,250));
   } else if (animationType == "D"){
     getms -= 400;
     if (getms>600){
+      sprite.setOrigin(sf::Vector2f(175,175));
+      sprite.setRotation(0);
       ended = true;
     } else if (getms>0){
-      int x = easeOutElastic(getms>500 ? 500:getms,0, 800, 500);
+      int x;
+      if (animFail) {
+        x = easeOutCubic(getms>500 ? 500:getms,0, 500, 500);
+        sprite.setRotation(easeOutExpo(getms>500 ? 500:getms,0,orientation? 80 : -80, 500));
+      } else x = easeOutElastic(getms>500 ? 500:getms, 0, 800, 500);
       sprite.setPosition(orientation ? 175+x : 1105-x,543);
       sprite.setTextureRect(sf::Rect<int>(350,0,350,250));
     }
@@ -313,7 +319,7 @@ bool Character::display(sf::RenderWindow& scr){
   } else if (animationType == "victory"){
     if (getms>= 500) ended = true;
   } else if (animationType == "restart"){
-    int x = easeOutSine(getms>700 ? 700:getms,900, -900, 700);
+    int x = easeOutSine(getms>700 ? 700:getms,animFail? 600:900, animFail? -600:-900, 700);
     sprite.setPosition(orientation ? 175+x : 1105-x,543);
     if (getms>=700) ended = true;
   }
@@ -341,6 +347,8 @@ bool Character::animate(std::string animationType){
   } else if (animationType == "D"){
     sprite.setTexture(animDtxt);
     sprite.setTextureRect(sf::Rect<int>(0,0,350,250));
+    sprite.setOrigin(sf::Vector2f(70,245));
+    sprite.setPosition(orientation ? 175:1105,618);
   } else if (animationType == "restart"){
     ended = false;
     sprite.setTexture(defaultTxt);
