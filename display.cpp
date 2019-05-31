@@ -1,7 +1,14 @@
 #include "easing.h"
 
-#include <iostream>
+
+#include <algorithm>
+#include <string>
+#include <array>
 #include <vector>
+#include <fstream>
+#include <exception>
+#include <iostream>
+#include <random>
 #include <sstream>
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
@@ -46,9 +53,94 @@
       sf::Clock clock;
       sf::Time animStart;
   };
-  int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, std::vector<std::string> choicesR, unsigned int correctAnswer, bool player);
-  sf::String toSfString(std::string theStdString);
-  std::vector<std::string> split(std::string string, char search);
+int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, std::vector<std::string> choicesR, unsigned int correctAnswer, bool player);
+sf::String toSfString(std::string theStdString);
+std::vector<std::string> split(std::string string, char search);
+
+
+class Backend {
+public:
+  Backend(std::string filename, int HP_penalty = 7, int HP_gain = 3);
+  void enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg);
+protected:
+  struct Joueur {
+    int HP = 40;
+  } joueur[2];
+
+  int m_HP_penalty;
+  int m_HP_gain;
+
+  struct Question {
+    std::string prompt;
+    std::array<std::string, 4> reponses; // La 1ere est toujours la bonne
+  };
+
+  std::vector<Question> question_pool;
+};
+
+Backend::Backend(std::string filename, int HP_penalty, int HP_gain) : m_HP_penalty(HP_penalty), m_HP_gain(HP_gain) {
+  std::ifstream q_file(filename);
+
+  if(!q_file.is_open()) {throw std::runtime_error("Couldn't attach to question file");}
+
+  while(!q_file.eof()) {
+    // Pas de validation d'entrée car on est des Pwnz0r
+    char buf[255];
+    q_file.getline(&buf[0], 255);
+    std::string line(&buf[0]);
+
+    Question q;
+
+    auto comma_pos = line.find(",");
+    q.prompt = line.substr(0, comma_pos);
+
+    for(int i = 0; i < 4; ++i) {
+      line.erase(0, comma_pos + 1);
+      comma_pos = line.find(",");
+      q.reponses[i] = line.substr(0, comma_pos);
+    }
+
+    std::cout << q.prompt << '\n' << q.reponses[0] << '\n' << q.reponses[1] << '\n' << q.reponses[2] << '\n' << q.reponses[3] << '\n';
+    std::cout << "-----------------------------------------------------------" << std::endl;
+
+    question_pool.push_back(q);
+  }
+}
+
+void Backend::enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg) {
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_int_distribution<int> dist(0, question_pool.size() - 1); // Random index in question pool
+
+    bool curr_player = false;
+
+    std::cerr << question_pool.size() << std::endl;
+
+  int stop = 0;
+  while(stop == 0) {
+    int question_ID = dist(rng);
+
+    std::array<std::string, 4> rep = question_pool[question_ID].reponses;
+    std::shuffle(rep.begin(), rep.end(), rng);
+
+    // rep contient les reponses mélangées.
+
+    int correct_answer = 0;
+
+    for(;correct_answer < 4; ++correct_answer) {
+      if(rep[correct_answer] == question_pool[question_ID].reponses[0]) break;
+    }
+
+    std::vector<std::string> rep_vec;
+    for(auto a : rep) {
+      rep_vec.push_back(a);
+    }
+
+    stop = playing(rw, bg, sf::String(question_pool[question_ID].prompt), rep_vec, correct_answer, curr_player);
+    curr_player = !curr_player;
+  }
+}
+
 
 // ---- PROGRAM ----
 
@@ -56,6 +148,8 @@ int main(){
   /*
    * Main Menu
    */
+
+  Backend bck("questions.txt");
   sf::RenderWindow window(sf::VideoMode(1280, 720), "FrankGame");
   window.setFramerateLimit(60);
   // gui
@@ -80,13 +174,8 @@ int main(){
           if (menu.displaying) { // Main Menu
             switch (menu.enter()){
               case 0:{
-                sf::String questionT = "Lorem ispum dodor sit amet consectuer ?";
-                unsigned int correctA = 3;
-                std::vector<std::string> c = {"A : Lorem ispum dodor sit amet consectuer", "B : Lorem ispum dodor sit amet consectuer", "C : Lorem ispum dodor sit amet consectuer", "D : Lorem ispum dodor sit amet consectuer"};
-                for (int i(0); i<4;i++){
-                  playing(window, bg, questionT, c, correctA, true);
-                  returned = playing(window, bg, questionT, c, correctA, false);
-                }
+                bck.enterPlayLoop(window, bg);
+                return 0;
                 break; }
               case 1: {
                 std::cout<<"2\n";
@@ -154,7 +243,7 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     sf::Event event;
     while(window.pollEvent(event)) {
       if(event.type == sf::Event::Closed)
-        return 0;
+        return 1;
       else if (event.type == sf::Event::KeyReleased){
         if (event.key.code == sf::Keyboard::Return && choices.displaying) { // Main Menu
           selection = choices.enter();
