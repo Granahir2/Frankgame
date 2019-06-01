@@ -53,94 +53,30 @@
       sf::Clock clock;
       sf::Time animStart;
   };
-int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, std::vector<std::string> choicesR, unsigned int correctAnswer, bool player);
-sf::String toSfString(std::string theStdString);
-std::vector<std::string> split(std::string string, char search);
+    
+  int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, std::vector<std::string> choicesR, unsigned int correctAnswer, bool player);
+  sf::String toSfString(std::string theStdString);
+  std::vector<std::string> split(std::string string, char search);
 
+  class Backend {
+    public:
+      Backend(std::string filename, int HP_penalty = 7, int HP_gain = 3);
+      void enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg);
+    protected:
+      struct Joueur {
+        int HP = 40;
+      } joueur[2];
 
-class Backend {
-public:
-  Backend(std::string filename, int HP_penalty = 7, int HP_gain = 3);
-  void enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg);
-protected:
-  struct Joueur {
-    int HP = 40;
-  } joueur[2];
+      int m_HP_penalty;
+      int m_HP_gain;
 
-  int m_HP_penalty;
-  int m_HP_gain;
+      struct Question {
+        std::string prompt;
+        std::array<std::string, 4> reponses; // La 1ere est toujours la bonne
+      };
 
-  struct Question {
-    std::string prompt;
-    std::array<std::string, 4> reponses; // La 1ere est toujours la bonne
+      std::vector<Question> question_pool;
   };
-
-  std::vector<Question> question_pool;
-};
-
-Backend::Backend(std::string filename, int HP_penalty, int HP_gain) : m_HP_penalty(HP_penalty), m_HP_gain(HP_gain) {
-  std::ifstream q_file(filename);
-
-  if(!q_file.is_open()) {throw std::runtime_error("Couldn't attach to question file");}
-
-  while(!q_file.eof()) {
-    // Pas de validation d'entrée car on est des Pwnz0r
-    char buf[255];
-    q_file.getline(&buf[0], 255);
-    std::string line(&buf[0]);
-
-    Question q;
-
-    auto comma_pos = line.find(",");
-    q.prompt = line.substr(0, comma_pos);
-
-    for(int i = 0; i < 4; ++i) {
-      line.erase(0, comma_pos + 1);
-      comma_pos = line.find(",");
-      q.reponses[i] = line.substr(0, comma_pos);
-    }
-
-    std::cout << q.prompt << '\n' << q.reponses[0] << '\n' << q.reponses[1] << '\n' << q.reponses[2] << '\n' << q.reponses[3] << '\n';
-    std::cout << "-----------------------------------------------------------" << std::endl;
-
-    question_pool.push_back(q);
-  }
-}
-
-void Backend::enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg) {
-    std::random_device dev;
-    std::mt19937 rng(dev());
-    std::uniform_int_distribution<int> dist(0, question_pool.size() - 1); // Random index in question pool
-
-    bool curr_player = false;
-
-    std::cerr << question_pool.size() << std::endl;
-
-  int stop = 0;
-  while(stop == 0) {
-    int question_ID = dist(rng);
-
-    std::array<std::string, 4> rep = question_pool[question_ID].reponses;
-    std::shuffle(rep.begin(), rep.end(), rng);
-
-    // rep contient les reponses mélangées.
-
-    int correct_answer = 0;
-
-    for(;correct_answer < 4; ++correct_answer) {
-      if(rep[correct_answer] == question_pool[question_ID].reponses[0]) break;
-    }
-
-    std::vector<std::string> rep_vec;
-    for(auto a : rep) {
-      rep_vec.push_back(a);
-    }
-
-    stop = playing(rw, bg, sf::String(question_pool[question_ID].prompt), rep_vec, correct_answer, curr_player);
-    curr_player = !curr_player;
-  }
-}
-
 
 // ---- PROGRAM ----
 
@@ -247,7 +183,6 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
       else if (event.type == sf::Event::KeyReleased){
         if (event.key.code == sf::Keyboard::Return && choices.displaying) { // Main Menu
           selection = choices.enter();
-          //chara1.failAttack(chara2.failAttack(true));
           if (player){
             chara1.animate(selectLetters.substr(selection,1));
             if (selection!=correctAnswer) chara1.failAttack(true);
@@ -341,7 +276,7 @@ Character::Character(bool player){
   animationType = "default";
   animCape = animNum = 1;
   iter = 0;
-  ended = false;
+  ended = animFail = false;
 }
 
 bool Character::display(sf::RenderWindow& scr){
@@ -471,7 +406,7 @@ bool Character::isNotFinished(){return !ended;}
 // GuiSelect class -----
 
   guiSelect::guiSelect(){
-    if (!fontDeja.loadFromFile("res/Bradley.ttf"))
+    if (!fontDeja.loadFromFile("res/OldLondon.ttf"))
       std::cerr<<"INTERNAL ERROR : Can't load default font [resources/fonts/DejaVuSans.ttf] !!";
     if (!barTxt.loadFromFile("res/choice.png"))
       std::cerr<<"ERROR : unable to load [resources/img/choice.png]\n";
@@ -541,3 +476,62 @@ bool Character::isNotFinished(){return !ended;}
 
   sf::Vector2f guiSelect::position(sf::Vector2f position){ return valPosition = position; } //set position
   bool guiSelect::type(bool type){ return valType = type; } //full or small msgbox
+
+
+Backend::Backend(std::string filename, int HP_penalty, int HP_gain) : m_HP_penalty(HP_penalty), m_HP_gain(HP_gain) {
+  std::ifstream q_file(filename);
+
+  if(!q_file.is_open()) {throw std::runtime_error("Couldn't attach to question file");}
+
+  while(!q_file.eof()) {
+    // Pas de validation d'entrée car on est des Pwnz0r
+    char buf[255];
+    q_file.getline(&buf[0], 255);
+    std::string line(&buf[0]);
+
+    Question q;
+
+    auto comma_pos = line.find(",");
+    q.prompt = line.substr(0, comma_pos);
+
+    for(int i = 0; i < 4; ++i) {
+      line.erase(0, comma_pos + 1);
+      comma_pos = line.find(",");
+      q.reponses[i] = line.substr(0, comma_pos);
+    }
+    /*
+    std::cout << q.prompt << '\n' << q.reponses[0] << '\n' << q.reponses[1] << '\n' << q.reponses[2] << '\n' << q.reponses[3] << '\n';
+    std::cout << "-----------------------------------------------------------" << std::endl;
+    */
+    question_pool.push_back(q);
+  }
+}
+void Backend::enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg) {
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<int> dist(0, question_pool.size() - 1); // Random index in question pool
+  bool curr_player = false;
+  //std::cerr << question_pool.size() << std::endl;
+  int stop = 0;
+  while(stop == 0) {
+    int question_ID = dist(rng);
+
+    std::array<std::string, 4> rep = question_pool[question_ID].reponses;
+    std::shuffle(rep.begin(), rep.end(), rng);
+
+    // rep contient les reponses mélangées.
+    int correct_answer = 0;
+
+    for(;correct_answer < 4; ++correct_answer) {
+      if(rep[correct_answer] == question_pool[question_ID].reponses[0]) break;
+    }
+
+    std::vector<std::string> rep_vec;
+    for(auto a : rep) {
+      rep_vec.push_back(a);
+    }
+
+    stop = playing(rw, bg, toSfString(question_pool[question_ID].prompt), rep_vec, correct_answer, curr_player);
+    curr_player = !curr_player;
+  }
+}
