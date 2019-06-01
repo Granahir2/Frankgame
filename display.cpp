@@ -247,9 +247,14 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
       else if (event.type == sf::Event::KeyReleased){
         if (event.key.code == sf::Keyboard::Return && choices.displaying) { // Main Menu
           selection = choices.enter();
-          chara1.failAttack(chara2.failAttack(true));
-          if (player) chara1.animate(selectLetters.substr(selection,1));
-          else chara2.animate(selectLetters.substr(selection,1));
+          //chara1.failAttack(chara2.failAttack(true));
+          if (player){
+            chara1.animate(selectLetters.substr(selection,1));
+            if (selection!=correctAnswer) chara1.failAttack(true);
+          } else {
+            chara2.animate(selectLetters.substr(selection,1));
+            if (selection!=correctAnswer) chara2.failAttack(true);
+          }
         }
         else if (event.key.code == sf::Keyboard::Up && choices.displaying) choices.change(true);
         else if (event.key.code == sf::Keyboard::Down && choices.displaying) choices.change(false);
@@ -267,7 +272,7 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     } else {
       oldanimating = animating;
       animating = (player)? chara1.isNotFinished(): chara2.isNotFinished();
-      if (block){ //&& fail attack
+      if (block && selection!=correctAnswer){
         int toMove = 8*std::sin(i*15);
         epicFail.setPosition(1280/2 + toMove, 720/2 + toMove);
         window.draw(epicFail);
