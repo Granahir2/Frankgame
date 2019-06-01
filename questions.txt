@@ -2,14 +2,14 @@ Qui sait le mieux décrire le son des vagues ?,Victor Hugo,Montaigne,J.de Léry,
 Qu'a écrit Victor Hugo ?,Préface de Cromwell,Vendredi ou la vie sauvage,On ne badine pas avec l'amour,Tom Sawyer
 Qui était Victor Hugo ?,Un écrivain et poète,Un écrivain,Un mort,Un tragédien
 Quand qu'a écrit J. de Léry?,Histoire d'un voyage en terre du Brésil,Vendredi ou les limbes du Pacifique,Ce qu'il advint du sauvage blanc,Harry Potter
-Où a voyagé J. de Léry ?,Au Mexique,A Marseille,En Antartique,A Rio,
+Où a voyagé J. de Léry ?,Au Mexique,A Marseille,En Antarctique,A Rio,
 Comment s'appellent les indigène qu'a rencontré J. de Léry ?,Les Tupinambas,Les Tapinambas,Les Tipanambas,Les 1ère S2
 A quel courant littéraire appartenait Michel de Montaigne ?,Humanisme,Classicisme,Baroque,Lumières
 A quel groupe d'écrivain appartenait Montaigne ?,La Pléiade,La table ronde,l'humanisme,La Guyenne
 Quel poste occupe Montaigne de 1557 à 1570 ?,conseiller à Périgueux,Président de la République,Noble à la court,député de la Franche-Compté
-Quel écrivain parmis ceux-ci fait partie de la Pléiade ?,Du Bellay,Robinson,J. De Léry,Victor Hugo
-Quel écrivain parmis ceux-ci fait partie de la Pléiade ?,Pierre de Ronsard,Michel Busset,François Hollande,JK Rowling
-Quelle est la célèbre œuvre auquelle a participé Diderot?,L'encyclopédie,Babar l'éléphant,Harry Potter,Le seigneur des anneaux
+Quel écrivain parmi ceux-ci fait partie de la Pléiade ?,Du Bellay,Robinson,J. De Léry,Victor Hugo
+Quel écrivain parmi ceux-ci fait partie de la Pléiade ?,Pierre de Ronsard,Michel Busset,François Hollande,JK Rowling
+Quelle est la célèbre œuvre auquel Diderot a participé?,L'encyclopédie,Babar l'éléphant,Harry Potter,Le seigneur des anneaux
 Comment était surnommé Diderot par Voltaire ?,Pantophile,Ammophile,Xénophile,Ergophile
 Qui est le personnage principal de “La Peste” d’Albert Camus?,Bernard Rieux,Gérard Grieux,Paul Mieux,David Goodenough
 De quand à quand est édité l’Encyclopédie?,1751-1772,1769-1790,1738-1756,1940-1945
