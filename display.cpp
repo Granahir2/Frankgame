@@ -242,12 +242,10 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
   // Question title
     sf::Font fontQ;
     fontQ.loadFromFile("res/URW");
-    sf::Text titleQ;
-    titleQ.setFont(fontQ);
-    titleQ.setString(questionTitle);
-    titleQ.setCharacterSize(50);
+    sf::Text titleQ(questionTitle,fontQ,30), timing("",fontQ, 40);
     titleQ.setPosition(640 - titleQ.getLocalBounds().width/2, 15);
     titleQ.setOutlineThickness(2);
+    timing.setOutlineThickness(2);
   //Characters + init
     Character chara1(true), chara2(false);
     chara1.turn(player); chara2.turn(!player);
@@ -291,6 +289,9 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     if (choices.displaying) {
       window.draw(titleQ);
       window.draw(box);
+      timing.setString(std::to_string( clock.getElapsedTime().asSeconds() ).substr(0,4));
+      timing.setPosition(640 - timing.getLocalBounds().width/2, 650);
+      window.draw(timing);
       choices.draw(window);
     } else {
       oldanimating = animating;
