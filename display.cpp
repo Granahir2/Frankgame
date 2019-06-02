@@ -148,7 +148,7 @@ void Backend::enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg) {
         break;
 
       case 2:
-        joueur[curr_player].HP += std::min((int)std::floor(3 - delta_t * 0.2f), 0);
+        joueur[curr_player].HP += std::max((int)std::floor(3 - delta_t * 0.2f), 0);
         break;
     }
 
@@ -192,7 +192,6 @@ int main(){
             switch (menu.enter()){
               case 0:{
                 bck.enterPlayLoop(window, bg);
-                return 0;
                 break; }
               case 1: {
                 std::cout<<"2\n";
