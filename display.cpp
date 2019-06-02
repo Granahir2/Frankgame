@@ -239,7 +239,8 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     choices.displaying = true;
     choices.position(sf::Vector2f(300,245));
     choices.choices = choicesR;
-  // Question title
+
+    // Question title
     sf::Font fontQ;
     fontQ.loadFromFile("res/URW");
     sf::Text titleQ(questionTitle,fontQ,30), timing("",fontQ, 40);
@@ -252,7 +253,8 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
       titleQ.setPosition(640 - titleQ.getLocalBounds().width/(2 * factor), 15);
     }
     timing.setOutlineThickness(2);
-  //Characters + init
+
+    //Characters + init
     Character chara1(true), chara2(false);
     chara1.turn(player); chara2.turn(!player);
     bool playing = true, animating=true, oldanimating, block = false;
@@ -285,6 +287,31 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
         }
         else if (event.key.code == sf::Keyboard::Up && choices.displaying) choices.change(true);
         else if (event.key.code == sf::Keyboard::Down && choices.displaying) choices.change(false);
+      } else if(event.type == sf::Event::MouseButtonPressed) {
+        const auto y = event.mouseButton.y;
+        choices.enter();
+        if(y < 720/4) {
+          selection = 0;
+        } else if(y >= 720/4 && y < 720/2) {
+          selection = 1;
+        } else if(y >= 720/2 && y < 3 * 720/4) {
+          selection = 2;
+        } else {
+          selection = 3;
+        }
+        if (player){
+            if (selection!=correctAnswer) {
+              chara1.failAttack(true);
+              retval = 1;
+            }
+            chara1.animate(selectLetters.substr(selection,1));
+          } else {
+            if (selection!=correctAnswer) {
+              chara2.failAttack(true);
+              retval = 1;
+            }
+            chara2.animate(selectLetters.substr(selection,1));
+          }
       }
     }
     i++;
