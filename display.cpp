@@ -495,8 +495,8 @@ bool Character::isNotFinished(){return !ended;}
 // GuiSelect class -----
 
   guiSelect::guiSelect(){
-    if (!fontDeja.loadFromFile("res/OldLondon.ttf"))
-      std::cerr<<"INTERNAL ERROR : Can't load default font [resources/fonts/DejaVuSans.ttf] !!";
+    if (!fontDeja.loadFromFile("res/BLKCHCRY.TTF"))
+      std::cerr<<"INTERNAL ERROR : Can't load default font [res/BLKCHCRY.TTF] !!";
     if (!barTxt.loadFromFile("res/choice.png"))
       std::cerr<<"ERROR : unable to load [resources/img/choice.png]\n";
     if (!smallBarTxt.loadFromFile("res/smallChoice.png"))
