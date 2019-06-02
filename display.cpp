@@ -109,18 +109,20 @@ void Backend::enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg) {
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<int> dist(0, question_pool.size() - 1); // Random index in question pool
-  bool curr_player = false;
+  bool curr_player = true;
   int retval = 0, i(0);
+  sf::Font font;
+  font.loadFromFile("res/DejaVuSans.ttf");
+  std::string dialog = "";
+  sf::Text text(dialog,font,30);
+
   while(retval != -1) {
     //init
       int question_ID = dist(rng);
       i++;
       std::array<std::string, 4> rep = question_pool[question_ID].reponses;
       std::shuffle(rep.begin(), rep.end(), rng);
-      std::cout<<" --- TOUR N°"<<i<<" --- \n"<<
-        "Equipe "<<(curr_player ? 1:2)<<" joue.\n"<<
-        "Vie de l'équipe 1 : "<<joueur[0].HP<<"\n"<<
-        "Vie de l'équipe 2 : "<<joueur[1].HP<<"\n"<<std::flush;
+      dialog = " --- TOUR N°"+std::to_string(i)+" ---\n\n";
     // rep contient les reponses mélangées.
       int correct_answer = 0;
       for(;correct_answer < 4; ++correct_answer)
@@ -131,8 +133,7 @@ void Backend::enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg) {
     //Jeu
       sf::Clock t;
       retval = playing(rw, bg, toSfString(question_pool[question_ID].prompt), rep_vec, correct_answer, curr_player);
-      int delta_t = t.getElapsedTime().asSeconds();
-
+      int delta_t = t.getElapsedTime().asSeconds()-7;
       switch(retval) {
         case 0:
           return;
@@ -140,16 +141,37 @@ void Backend::enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg) {
         case 1: {
           const int n = std::ceil(7 + delta_t * 0.2f);
           joueur[curr_player].HP -= n; // Penalty grows wrt time
-          std::cout<<"Mauvaise réponse !! Equipe "<<(curr_player ? 1:2)<< " perds "<<n<<" points de vie !\n"<<
-            "Elle a répondu en "<<delta_t<<" secondes !\n\n";
+          dialog.append("perdu !! La bonne réponse était : \n> "+question_pool[question_ID].reponses[0]+" <\n"+
+            "Equipe "+(curr_player ? '1':'2')+ " perds "+std::to_string(n)+" points de vie !\n"+
+            "Elle a répondu en "+std::to_string(delta_t)+" secondes !\n\n");
           break; }
         case 2: {
           const int n = std::max((int)std::floor(3 - delta_t * 0.2f), 0);
           joueur[curr_player].HP += n;
-          std::cout<<"Bonne réponse !! Equipe "<<(curr_player ? 1:2)<<" gagne "<<n<<" points de vie !\n"<<
-            "Elle a répondu en "<<delta_t<<" secondes !\n\n";
+          dialog.append("Bonne réponse !! Equipe ");
+          dialog.append(curr_player ? "1":"2");
+          dialog.append(" gagne "+std::to_string(n)+" points de vie !\n"+
+            "Elle a répondu en "+std::to_string(delta_t)+" secondes !\n\n");
           break; }
       }
+    // Petite pause :)
+    dialog.append("Vie de l'équipe 1 : "+std::to_string(joueur[1].HP)+"\n" + "Vie de l'équipe 2 : "+std::to_string(joueur[0].HP)+"\n");
+    bg.setColor(sf::Color(30,30,30));
+    bool wt(1);
+    text.setString(toSfString(dialog));
+    text.setPosition(640-text.getLocalBounds().width/2, 360-text.getLocalBounds().height/2);
+    while (wt){
+      sf::Event event;
+      while(rw.pollEvent(event))
+        if(event.type == sf::Event::Closed)
+          return;
+        else if (event.type == sf::Event::KeyReleased || event.type == sf::Event::MouseButtonPressed)
+          wt=0;
+      rw.draw(bg);
+      rw.draw(text);
+      rw.display();
+    }
+    bg.setColor(sf::Color::White);
     // Changement de joueurs.
       if(joueur[curr_player].HP <= 0) return;
       curr_player = !curr_player;
@@ -173,10 +195,12 @@ int main(){
     menu.choices = {"Jouer","Ajouter des questions", "Quitter"};
     menu.type(false);
     menu.position(sf::Vector2f(50,75));
-  sf::Texture bgTxt;
-    bgTxt.loadFromFile("res/Fond_1.png");
-  sf::Sprite bg;
+  sf::Texture bgTxt, bg2Txt;
+    bgTxt.loadFromFile("res/menu.png");
+    bg2Txt.loadFromFile("res/Fond_1.png");
+  sf::Sprite bg,bg2;
     bg.setTexture(bgTxt);
+    bg2.setTexture(bg2Txt);
   bool returned;
   while (window.isOpen()){
     sf::Event event;
@@ -189,7 +213,7 @@ int main(){
           if (menu.displaying) { // Main Menu
             switch (menu.enter()){
               case 0:{
-                bck.enterPlayLoop(window, bg);
+                bck.enterPlayLoop(window, bg2);
                 break; }
               case 1: {
                 std::cout<<"2\n";
@@ -245,7 +269,6 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     titleQ.setOutlineThickness(2);
     if(titleQ.getLocalBounds().width >= 1280) {
       float factor = (titleQ.getLocalBounds().width)/1280.0f;
-
       titleQ.setScale(1/factor, 1/factor);
       titleQ.setPosition(640 - titleQ.getLocalBounds().width/(2 * factor), 15);
     }
@@ -261,10 +284,11 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     const std::string selectLetters = "ABCD";
     int retval = 2;
   while (playing){
+    const float elapsed = clock.getElapsedTime().asSeconds() - 5.;
     sf::Event event;
-    while(window.pollEvent(event)) {
+    while(window.pollEvent(event) && elapsed>0) {
       if(event.type == sf::Event::Closed)
-        return 1;
+        return 0;
       else if (event.type == sf::Event::KeyReleased){
         if (event.key.code == sf::Keyboard::Return && choices.displaying) { // Main Menu
           selection = choices.enter();
@@ -284,6 +308,7 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
         }
         else if (event.key.code == sf::Keyboard::Up && choices.displaying) choices.change(true);
         else if (event.key.code == sf::Keyboard::Down && choices.displaying) choices.change(false);
+        else if (event.key.code == sf::Keyboard::Escape) return 0;
       } else if(event.type == sf::Event::MouseButtonPressed) {
         const auto y = event.mouseButton.y;
         choices.enter();
@@ -316,12 +341,23 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     window.draw(bg);
     chara1.display(window);
     chara2.display(window);
-    if (choices.displaying) {
+    if (elapsed<0){
+      timing.setCharacterSize(250+elapsed*30);
+      timing.setString(std::to_string( -elapsed ).substr(0,1));
+      window.draw(titleQ);
+      window.draw(timing);
+      if (elapsed>-3){
+        window.draw(box);
+        choices.draw(window);
+        timing.setPosition(0, 200);
+      } else timing.setPosition(640 - timing.getLocalBounds().width/2, 360 - timing.getLocalBounds().height/2);
+    } else if (choices.displaying){
+      timing.setCharacterSize(60);
+      timing.setString(std::to_string( std::abs(elapsed) ).substr(0,4));
+      timing.setPosition(640 - timing.getLocalBounds().width/2, 550);
+      window.draw(timing);
       window.draw(titleQ);
       window.draw(box);
-      timing.setString(std::to_string( clock.getElapsedTime().asSeconds() ).substr(0,4));
-      timing.setPosition(640 - timing.getLocalBounds().width/2, 650);
-      window.draw(timing);
       choices.draw(window);
     } else {
       oldanimating = animating;
