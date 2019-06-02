@@ -106,55 +106,53 @@ Backend::Backend(std::string filename, int HP_penalty, int HP_gain) : m_HP_penal
 }
 
 void Backend::enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg) {
-    std::random_device dev;
-    std::mt19937 rng(dev());
-    std::uniform_int_distribution<int> dist(0, question_pool.size() - 1); // Random index in question pool
-
-    bool curr_player = false;
-
-    std::cerr << question_pool.size() << std::endl;
-
-  int retval = 0;
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<int> dist(0, question_pool.size() - 1); // Random index in question pool
+  bool curr_player = false;
+  int retval = 0, i(0);
   while(retval != -1) {
-    int question_ID = dist(rng);
-
-    std::array<std::string, 4> rep = question_pool[question_ID].reponses;
-    std::shuffle(rep.begin(), rep.end(), rng);
-
+    //init
+      int question_ID = dist(rng);
+      i++;
+      std::array<std::string, 4> rep = question_pool[question_ID].reponses;
+      std::shuffle(rep.begin(), rep.end(), rng);
+      std::cout<<" --- TOUR N°"<<i<<" --- \n"<<
+        "Equipe "<<(curr_player ? 1:2)<<" joue.\n"<<
+        "Vie de l'équipe 1 : "<<joueur[0].HP<<"\n"<<
+        "Vie de l'équipe 2 : "<<joueur[1].HP<<"\n"<<std::flush;
     // rep contient les reponses mélangées.
+      int correct_answer = 0;
+      for(;correct_answer < 4; ++correct_answer)
+        if(rep[correct_answer] == question_pool[question_ID].reponses[0]) break;
+      std::vector<std::string> rep_vec;
+      for(auto a : rep) 
+        rep_vec.push_back(a);
+    //Jeu
+      sf::Clock t;
+      retval = playing(rw, bg, toSfString(question_pool[question_ID].prompt), rep_vec, correct_answer, curr_player);
+      int delta_t = t.getElapsedTime().asSeconds();
 
-    int correct_answer = 0;
-
-    for(;correct_answer < 4; ++correct_answer) {
-      if(rep[correct_answer] == question_pool[question_ID].reponses[0]) break;
-    }
-
-    std::vector<std::string> rep_vec;
-    for(auto a : rep) {
-      rep_vec.push_back(a);
-    }
-
-    sf::Clock t;
-    retval = playing(rw, bg, toSfString(question_pool[question_ID].prompt), rep_vec, correct_answer, curr_player);
-    int delta_t = t.getElapsedTime().asSeconds();
-
-    switch(retval) {
-      case 0:
-        return;
-        break;
-
-      case 1:
-        joueur[curr_player].HP -= (int)std::ceil(7 + delta_t * 0.2f); // Penalty grows wrt time
-        break;
-
-      case 2:
-        joueur[curr_player].HP += std::max((int)std::floor(3 - delta_t * 0.2f), 0);
-        break;
-    }
-
-    if(joueur[curr_player].HP <= 0) return;
-
-    curr_player = !curr_player;
+      switch(retval) {
+        case 0:
+          return;
+          break;
+        case 1: {
+          const int n = std::ceil(7 + delta_t * 0.2f);
+          joueur[curr_player].HP -= n; // Penalty grows wrt time
+          std::cout<<"Mauvaise réponse !! Equipe "<<(curr_player ? 1:2)<< " perds "<<n<<" points de vie !\n"<<
+            "Elle a répondu en "<<delta_t<<" secondes !\n\n";
+          break; }
+        case 2: {
+          const int n = std::max((int)std::floor(3 - delta_t * 0.2f), 0);
+          joueur[curr_player].HP += n;
+          std::cout<<"Bonne réponse !! Equipe "<<(curr_player ? 1:2)<<" gagne "<<n<<" points de vie !\n"<<
+            "Elle a répondu en "<<delta_t<<" secondes !\n\n";
+          break; }
+      }
+    // Changement de joueurs.
+      if(joueur[curr_player].HP <= 0) return;
+      curr_player = !curr_player;
   }
 }
 
