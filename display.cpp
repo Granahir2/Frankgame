@@ -245,6 +245,12 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     sf::Text titleQ(questionTitle,fontQ,30), timing("",fontQ, 40);
     titleQ.setPosition(640 - titleQ.getLocalBounds().width/2, 15);
     titleQ.setOutlineThickness(2);
+    if(titleQ.getLocalBounds().width >= 1280) {
+      float factor = (titleQ.getLocalBounds().width)/1280.0f;
+
+      titleQ.setScale(1/factor, 1/factor);
+      titleQ.setPosition(640 - titleQ.getLocalBounds().width/(2 * factor), 15);
+    }
     timing.setOutlineThickness(2);
   //Characters + init
     Character chara1(true), chara2(false);
