@@ -270,17 +270,17 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
         if (event.key.code == sf::Keyboard::Return && choices.displaying) { // Main Menu
           selection = choices.enter();
           if (player){
-            chara1.animate(selectLetters.substr(selection,1));
             if (selection!=correctAnswer) {
               chara1.failAttack(true);
               retval = 1;
             }
+            chara1.animate(selectLetters.substr(selection,1));
           } else {
-            chara2.animate(selectLetters.substr(selection,1));
             if (selection!=correctAnswer) {
               chara2.failAttack(true);
               retval = 1;
             }
+            chara2.animate(selectLetters.substr(selection,1));
           }
         }
         else if (event.key.code == sf::Keyboard::Up && choices.displaying) choices.change(true);
@@ -480,7 +480,7 @@ bool Character::animate(std::string animationType){
   } else if (animationType == "D"){
     sprite.setTexture(animDtxt);
     sprite.setTextureRect(sf::Rect<int>(0,0,350,250));
-    sprite.setOrigin(sf::Vector2f(70,245));
+    if (animFail) sprite.setOrigin(sf::Vector2f(70,245));
     sprite.setPosition(orientation ? 175:1105,618);
   } else if (animationType == "restart"){
     ended = false;
