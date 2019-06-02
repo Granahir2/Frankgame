@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <string>
 #include <array>
+#include <cmath>
 #include <vector>
 #include <fstream>
 #include <exception>
@@ -77,6 +78,86 @@
 
       std::vector<Question> question_pool;
   };
+
+Backend::Backend(std::string filename, int HP_penalty, int HP_gain) : m_HP_penalty(HP_penalty), m_HP_gain(HP_gain) {
+  std::ifstream q_file(filename);
+
+  if(!q_file.is_open()) {throw std::runtime_error("Couldn't attach to question file");}
+
+  while(!q_file.eof()) {
+    // Pas de validation d'entrée car on est des Pwnz0r
+    char buf[255];
+    q_file.getline(&buf[0], 255);
+    std::string line(&buf[0]);
+
+    Question q;
+
+    auto comma_pos = line.find(",");
+    q.prompt = line.substr(0, comma_pos);
+
+    for(int i = 0; i < 4; ++i) {
+      line.erase(0, comma_pos + 1);
+      comma_pos = line.find(",");
+      q.reponses[i] = line.substr(0, comma_pos);
+    }
+
+    question_pool.push_back(q);
+  }
+}
+
+void Backend::enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg) {
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_int_distribution<int> dist(0, question_pool.size() - 1); // Random index in question pool
+
+    bool curr_player = false;
+
+    std::cerr << question_pool.size() << std::endl;
+
+  int retval = 0;
+  while(retval != -1) {
+    int question_ID = dist(rng);
+
+    std::array<std::string, 4> rep = question_pool[question_ID].reponses;
+    std::shuffle(rep.begin(), rep.end(), rng);
+
+    // rep contient les reponses mélangées.
+
+    int correct_answer = 0;
+
+    for(;correct_answer < 4; ++correct_answer) {
+      if(rep[correct_answer] == question_pool[question_ID].reponses[0]) break;
+    }
+
+    std::vector<std::string> rep_vec;
+    for(auto a : rep) {
+      rep_vec.push_back(a);
+    }
+
+    sf::Clock t;
+    retval = playing(rw, bg, toSfString(question_pool[question_ID].prompt), rep_vec, correct_answer, curr_player);
+    int delta_t = t.getElapsedTime().asSeconds();
+
+    switch(retval) {
+      case 0:
+        return;
+        break;
+
+      case 1:
+        joueur[curr_player].HP -= (int)std::ceil(7 + delta_t * 0.2f); // Penalty grows wrt time
+        break;
+
+      case 2:
+        joueur[curr_player].HP += std::min((int)std::floor(3 - delta_t * 0.2f), 0);
+        break;
+    }
+
+    if(joueur[curr_player].HP <= 0) return;
+
+    curr_player = !curr_player;
+  }
+}
+
 
 // ---- PROGRAM ----
 
@@ -175,6 +256,7 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     sf::Clock clock;
     sf::Time startPain;
     const std::string selectLetters = "ABCD";
+    int retval = 2;
   while (playing){
     sf::Event event;
     while(window.pollEvent(event)) {
@@ -185,10 +267,16 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
           selection = choices.enter();
           if (player){
             chara1.animate(selectLetters.substr(selection,1));
-            if (selection!=correctAnswer) chara1.failAttack(true);
+            if (selection!=correctAnswer) {
+              chara1.failAttack(true);
+              retval = 1;
+            }
           } else {
             chara2.animate(selectLetters.substr(selection,1));
-            if (selection!=correctAnswer) chara2.failAttack(true);
+            if (selection!=correctAnswer) {
+              chara2.failAttack(true);
+              retval = 1;
+            }
           }
         }
         else if (event.key.code == sf::Keyboard::Up && choices.displaying) choices.change(true);
@@ -227,7 +315,7 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     }
     window.display();
   }
-  return 0;
+  return retval;
 }
 
 
@@ -476,62 +564,3 @@ bool Character::isNotFinished(){return !ended;}
 
   sf::Vector2f guiSelect::position(sf::Vector2f position){ return valPosition = position; } //set position
   bool guiSelect::type(bool type){ return valType = type; } //full or small msgbox
-
-
-Backend::Backend(std::string filename, int HP_penalty, int HP_gain) : m_HP_penalty(HP_penalty), m_HP_gain(HP_gain) {
-  std::ifstream q_file(filename);
-
-  if(!q_file.is_open()) {throw std::runtime_error("Couldn't attach to question file");}
-
-  while(!q_file.eof()) {
-    // Pas de validation d'entrée car on est des Pwnz0r
-    char buf[255];
-    q_file.getline(&buf[0], 255);
-    std::string line(&buf[0]);
-
-    Question q;
-
-    auto comma_pos = line.find(",");
-    q.prompt = line.substr(0, comma_pos);
-
-    for(int i = 0; i < 4; ++i) {
-      line.erase(0, comma_pos + 1);
-      comma_pos = line.find(",");
-      q.reponses[i] = line.substr(0, comma_pos);
-    }
-    /*
-    std::cout << q.prompt << '\n' << q.reponses[0] << '\n' << q.reponses[1] << '\n' << q.reponses[2] << '\n' << q.reponses[3] << '\n';
-    std::cout << "-----------------------------------------------------------" << std::endl;
-    */
-    question_pool.push_back(q);
-  }
-}
-void Backend::enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg) {
-  std::random_device dev;
-  std::mt19937 rng(dev());
-  std::uniform_int_distribution<int> dist(0, question_pool.size() - 1); // Random index in question pool
-  bool curr_player = false;
-  //std::cerr << question_pool.size() << std::endl;
-  int stop = 0;
-  while(stop == 0) {
-    int question_ID = dist(rng);
-
-    std::array<std::string, 4> rep = question_pool[question_ID].reponses;
-    std::shuffle(rep.begin(), rep.end(), rng);
-
-    // rep contient les reponses mélangées.
-    int correct_answer = 0;
-
-    for(;correct_answer < 4; ++correct_answer) {
-      if(rep[correct_answer] == question_pool[question_ID].reponses[0]) break;
-    }
-
-    std::vector<std::string> rep_vec;
-    for(auto a : rep) {
-      rep_vec.push_back(a);
-    }
-
-    stop = playing(rw, bg, toSfString(question_pool[question_ID].prompt), rep_vec, correct_answer, curr_player);
-    curr_player = !curr_player;
-  }
-}
