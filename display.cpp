@@ -1,6 +1,7 @@
 #include "easing.h"
 
 
+#include <cstdlib>
 #include <algorithm>
 #include <string>
 #include <array>
@@ -216,7 +217,7 @@ int main(){
                 bck.enterPlayLoop(window, bg2);
                 break; }
               case 1: {
-                std::cout<<"2\n";
+                std::system("start ed.exe");
                 break; }
               case 2:{
                 window.close();
