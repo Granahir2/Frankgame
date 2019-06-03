@@ -10,7 +10,7 @@
                 "${fileDirname}/easing.cpp",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}",
-                "-lsfml-graphics", "-lsfml-window", "-lsfml-system"
+                "-lsfml-graphics", "-lsfml-window", "-lsfml-system", "-lsfml-audio"
             ],
             "options": {
                 "cwd": "/usr/bin"

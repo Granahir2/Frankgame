@@ -186,7 +186,11 @@ int main(){
   /*
    * Main Menu
    */
-
+  sf::Music music;
+  music.openFromFile("res/ost.ogg");
+  music.setLoop(true);
+  music.setVolume(20);
+  music.play();
   Backend bck("questions.txt");
   sf::RenderWindow window(sf::VideoMode(1280, 720), "FrankGame");
   window.setFramerateLimit(60);
