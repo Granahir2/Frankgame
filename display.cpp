@@ -273,7 +273,7 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
       titleQ.setPosition(640 - titleQ.getLocalBounds().width/(2 * factor), 15);
     }
     timing.setOutlineThickness(2);
-
+    
     //Characters + init
     Character chara1(true), chara2(false);
     chara1.turn(player); chara2.turn(!player);
@@ -344,13 +344,14 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     if (elapsed<0){
       timing.setCharacterSize(250+elapsed*30);
       timing.setString(std::to_string( -elapsed ).substr(0,1));
+      timing.setPosition(640 - timing.getLocalBounds().width/2, 360 - timing.getLocalBounds().height/2);
       window.draw(titleQ);
       window.draw(timing);
       if (elapsed>-3){
         window.draw(box);
         choices.draw(window);
         timing.setPosition(0, 200);
-      } else timing.setPosition(640 - timing.getLocalBounds().width/2, 360 - timing.getLocalBounds().height/2);
+      }
     } else if (choices.displaying){
       timing.setCharacterSize(60);
       timing.setString(std::to_string( std::abs(elapsed) ).substr(0,4));
