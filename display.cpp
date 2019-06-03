@@ -115,7 +115,12 @@ void Backend::enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg) {
   sf::Font font;
   font.loadFromFile("res/DejaVuSans.ttf");
   std::string dialog = "";
-  sf::Text text(dialog,font,30);
+  sf::Text text(dialog,font,30), criticTxt("",font, 50);
+  sf::SoundBuffer buffer;
+  sf::Sound criticHP;
+  buffer.loadFromFile("res/criticHP.wav");
+  criticHP.setBuffer(buffer);
+  criticHP.setLoop(true);
 
   while(retval != -1) {
     //init
@@ -134,7 +139,7 @@ void Backend::enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg) {
     //Jeu
       sf::Clock t;
       retval = playing(rw, bg, toSfString(question_pool[question_ID].prompt), rep_vec, correct_answer, curr_player);
-      int delta_t = t.getElapsedTime().asSeconds()-7;
+      int delta_t = t.getElapsedTime().asSeconds()-7.5;
       switch(retval) {
         case 0:
           return;
@@ -156,11 +161,26 @@ void Backend::enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg) {
           break; }
       }
     // Petite pause :)
-    dialog.append("Vie de l'équipe 1 : "+std::to_string(joueur[1].HP)+"\n" + "Vie de l'équipe 2 : "+std::to_string(joueur[0].HP)+"\n");
+    dialog.append("Vie de l'équipe 1 : "+std::to_string(joueur[1].HP)+"");
+    dialog.append("\nVie de l'équipe 2 : "+std::to_string(joueur[0].HP)+"\n");
+
+    if (joueur[1].HP<=0)
+      criticTxt.setString("L'EQUIPE 1 N'A PLUS DE VIE !!!");
+    else if (joueur[0].HP<=0)
+      criticTxt.setString("L'EQUIPE 2 N'A PLUS DE VIE !!!");
+    if (joueur[1].HP<=8) {
+      criticTxt.setString("VIE DE L'EQUIPE 1 AU NIVEAU CRITIQUE !!!");
+      criticHP.play();
+    } else if (joueur[0].HP<=8){
+      criticTxt.setString("VIE DE L'EQUIPE 2 AU NIVEAU CRITIQUE !!!");
+      criticHP.play();
+    } else criticHP.stop();
+
     bg.setColor(sf::Color(30,30,30));
     bool wt(1);
     text.setString(toSfString(dialog));
     text.setPosition(640-text.getLocalBounds().width/2, 360-text.getLocalBounds().height/2);
+    criticTxt.setPosition(640-criticTxt.getLocalBounds().width/2, 640);
     while (wt){
       sf::Event event;
       while(rw.pollEvent(event))
@@ -170,6 +190,7 @@ void Backend::enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg) {
           wt=0;
       rw.draw(bg);
       rw.draw(text);
+      rw.draw(criticTxt);
       rw.display();
     }
     bg.setColor(sf::Color::White);
@@ -266,7 +287,7 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     choices.position(sf::Vector2f(300,245));
     choices.choices = choicesR;
 
-    // Question title
+  // Question title
     sf::Font fontQ;
     fontQ.loadFromFile("res/URW");
     sf::Text titleQ(questionTitle,fontQ,30), timing("",fontQ, 40);
@@ -279,7 +300,7 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     }
     timing.setOutlineThickness(2);
     
-    //Characters + init
+  //Characters + init
     Character chara1(true), chara2(false);
     chara1.turn(player); chara2.turn(!player);
     bool playing = true, animating=true, oldanimating, block = false;
@@ -288,6 +309,13 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
     sf::Time startPain;
     const std::string selectLetters = "ABCD";
     int retval = 2;
+  //sound
+    sf::SoundBuffer bufferFail, bufferDamage;
+    sf::Sound soundFail, soundDamage;
+    bufferFail.loadFromFile("res/fail.wav");
+    bufferDamage.loadFromFile("res/Damage.wav");
+    soundFail.setBuffer(bufferFail);
+    soundDamage.setBuffer(bufferDamage);
   while (playing){
     const float elapsed = clock.getElapsedTime().asSeconds() - 5.;
     sf::Event event;
@@ -365,7 +393,7 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
       window.draw(titleQ);
       window.draw(box);
       choices.draw(window);
-    } else {
+    } else { //animating
       oldanimating = animating;
       animating = (player)? chara1.isNotFinished(): chara2.isNotFinished();
       if (block && selection!=correctAnswer){
@@ -374,6 +402,8 @@ int playing(sf::RenderWindow& window, sf::Sprite bg, sf::String questionTitle, s
         window.draw(epicFail);
       }
       if (oldanimating != animating && !block){ //Make the final anim
+        if (selection!=correctAnswer) soundFail.play();
+        else soundDamage.play();
         if (!player) {
           chara1.animate(chara2.getFailAttack()? "victory": "pain");
           if (selection%2==1) chara2.animate("restart");
@@ -516,7 +546,7 @@ bool Character::display(sf::RenderWindow& scr){
     sprite.setPosition(orientation ? 175 : 1105, 543+8*std::sin((getms-getms%10)*15) );
     if (getms>= 500) ended = true;
   } else if (animationType == "victory"){
-    if (getms>= 500) ended = true;
+    if (getms>= 1000) ended = true;
   } else if (animationType == "restart"){
     int x = easeOutSine(getms>700 ? 700:getms,animFail? 600:900, animFail? -600:-900, 700);
     sprite.setPosition(orientation ? 175+x : 1105-x,543);
