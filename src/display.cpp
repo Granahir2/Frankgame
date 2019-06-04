@@ -164,17 +164,17 @@ void Backend::enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg) {
     dialog.append("Vie de l'équipe 1 : "+std::to_string(joueur[1].HP)+"");
     dialog.append("\nVie de l'équipe 2 : "+std::to_string(joueur[0].HP)+"\n");
 
-    if (joueur[1].HP<=8) {
+    if (joueur[1].HP<=0)
+      criticTxt.setString("L'EQUIPE 1 N'A PLUS DE VIE !!!");
+    else if (joueur[0].HP<=0)
+      criticTxt.setString("L'EQUIPE 2 N'A PLUS DE VIE !!!");
+    else if (joueur[1].HP<=8) {
       criticTxt.setString("VIE DE L'EQUIPE 1 AU NIVEAU CRITIQUE !!!");
       criticHP.play();
     } else if (joueur[0].HP<=8){
       criticTxt.setString("VIE DE L'EQUIPE 2 AU NIVEAU CRITIQUE !!!");
       criticHP.play();
-    } else criticHP.stop();
-    if (joueur[1].HP<=0)
-      criticTxt.setString("L'EQUIPE 1 N'A PLUS DE VIE !!!");
-    else if (joueur[0].HP<=0)
-      criticTxt.setString("L'EQUIPE 2 N'A PLUS DE VIE !!!");
+    }
 
     bg.setColor(sf::Color(30,30,30));
     bool wt(1);
@@ -194,6 +194,7 @@ void Backend::enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg) {
       rw.display();
     }
     bg.setColor(sf::Color::White);
+    criticHP.stop();
     // Changement de joueurs.
       if(joueur[curr_player].HP <= 0) return;
       curr_player = !curr_player;
