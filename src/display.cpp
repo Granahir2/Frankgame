@@ -78,6 +78,9 @@
       };
 
       std::vector<Question> question_pool;
+
+      std::vector<int> order_pool;
+      int return_random_q();
   };
 
 Backend::Backend(std::string filename, int HP_penalty, int HP_gain) : m_HP_penalty(HP_penalty), m_HP_gain(HP_gain) {
@@ -104,6 +107,27 @@ Backend::Backend(std::string filename, int HP_penalty, int HP_gain) : m_HP_penal
 
     question_pool.push_back(q);
   }
+
+  for(int i = 0; i < question_pool.size(); ++i) {
+    order_pool.push_back(i);
+  }
+}
+
+int Backend::return_random_q() {
+  static int index = order_pool.size();
+
+  if(index == order_pool.size()) {
+      std::random_device dev;
+      std::mt19937 rng(dev());
+  
+      std::shuffle(order_pool.begin(), order_pool.end(), rng);
+      index = 0;
+  }
+
+  auto retval = order_pool[index];
+  ++index;
+  return retval;
+
 }
 
 void Backend::enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg) {
@@ -124,7 +148,7 @@ void Backend::enterPlayLoop(sf::RenderWindow& rw, sf::Sprite& bg) {
 
   while(retval != -1) {
     //init
-      int question_ID = dist(rng);
+      int question_ID = return_random_q();
       i++;
       std::array<std::string, 4> rep = question_pool[question_ID].reponses;
       std::shuffle(rep.begin(), rep.end(), rng);
